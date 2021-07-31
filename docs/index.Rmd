@@ -30,7 +30,7 @@ maringa <- read_csv("../data/maringa.csv") %>%
 #data_avg %>% ggplot(aes(x = data, y = confirmados)) + geom_line()
 ```
 
-# Última atualização `r format(last(maringa$data), "%d/%m/%Y")`
+# Última atualização `r format(max(ymd(maringa$data)), "%d/%m/%Y")`
 
 ```{r dist_casos, echo = FALSE, message = FALSE,  warning = FALSE, fig.width = 8, fig.height = 8}
 tip <- "Data: {format(data, format = '%d/%m/%Y')}\nNúmero de vacinas: {n}"
