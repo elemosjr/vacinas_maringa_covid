@@ -1,0 +1,59 @@
+```{r setup, include = FALSE}
+library(ggiraph)
+library(glue)
+library(tidyverse)
+library(lubridate)
+library(tsibble)
+library(fable)
+library(feasts)
+library(glue)
+
+seila <- function(x)
+{
+  ret_ <- x - lag(x, default = 0)
+  ret_[which(ret_ < 0)] <- 0
+  ret_
+}
+
+Sys.setlocale("LC_TIME", "pt_BR.UTF-8")
+
+moving_average <- function(x, n = 5)
+{
+  round(rollapply(x, n, FUN = function(x) mean(x, na.rm = TRUE),
+                  by = 1, partial = TRUE, fill = NA, align = "right"))
+}
+
+
+maringa <- read_csv("../data/maringa.csv") %>%
+  mutate(data = ymd(vacina_dataaplicacao))
+
+#data_avg %>% ggplot(aes(x = data, y = confirmados)) + geom_line()
+```
+
+# Última atualização `r format(last(maringa$data), "%d/%m/%Y")`
+
+```{r dist_casos, echo = FALSE, message = FALSE,  warning = FALSE, fig.width = 8, fig.height = 8}
+tip <- "Data: {format(data, format = '%d/%m/%Y')}\nNúmero de vacinas: {n}"
+
+top3 <- top_n(maringa, 3, n)
+
+datas_x <- sort(c(seq(min(maringa$data), max(maringa$data), length.out = 7), top3$data))
+
+grafico <- maringa %>%
+  ggplot(aes(x = data, y = n)) +
+  geom_col_interactive(mapping = aes(tooltip = glue(tip))) +
+  geom_label_interactive(data = top3, aes(x = data, y = n, label = n), nudge_y = 2000) +
+  scale_x_date(breaks = datas_x, labels = format(datas_x, format = "%d/%m")) +
+  labs(x = "Data", y = "Número de vacinados",
+       title = "Número de vacinados por dia em Maringá (PR)",
+       subtitle = "Número de vacinas registradas no sistema ConecteSUS por dia (Pode não representar o número real de vacinas aplicada por dia)",
+       caption = "Fonte: Datasus (https://opendatasus.saude.gov.br/dataset/covid-19-vacinacao)") +
+  guides(fill = guide_legend(override.aes = aes(label = ""))) +
+  theme(axis.text.x = element_text(angle = 90),
+        legend.position = c(.125,.9),
+        legend.background = element_rect(colour = "transparent", fill = "transparent"))
+
+girafe(code = print(grafico), width_svg = 12, height_svg = 8, pointsize = 14) %>%
+  girafe_options(grafico, opts_tooltip(use_fill = TRUE))
+```
+
